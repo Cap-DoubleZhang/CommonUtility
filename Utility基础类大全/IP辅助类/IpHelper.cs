@@ -230,5 +230,63 @@ namespace Utilities
                     return ip;
             }
         }
+
+        /// <summary>
+        /// 获取用户IP地址New
+        /// </summary>
+        /// <returns></returns>
+        public static string GetUserIP()
+        {
+            //如果客户端使用了代理服务器，则利用HTTP_X_FORWARDED_FOR找到客户端IP地址
+            string userHostAddress = HttpContext.Current.Request.ServerVariables["HTTP_X_FORWARDED_FOR"].ToString().Split(',')[0].Trim();
+            //否则直接读取REMOTE_ADDR获取客户端IP地址
+            if (string.IsNullOrEmpty(userHostAddress))
+            {
+                userHostAddress = HttpContext.Current.Request.ServerVariables["REMOTE_ADDR"];
+            }
+            //前两者均失败，则利用Request.UserHostAddress属性获取IP地址，但此时无法确定该IP是客户端IP还是代理IP
+            if (string.IsNullOrEmpty(userHostAddress))
+            {
+                userHostAddress = HttpContext.Current.Request.UserHostAddress;
+            }
+            //最后判断获取是否成功，并检查IP地址的格式（检查其格式非常重要）
+            if (!string.IsNullOrEmpty(userHostAddress) && IsIP(userHostAddress))
+            {
+                return userHostAddress;
+            }
+
+            return "127.0.0.1";
+        }
+
+        /// <summary>
+        /// 判断是否为移动端请求
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsMobileRequest()
+        {
+            bool IsMobile = false;
+
+            string agent = HttpContext.Current.Request.UserAgent;
+            string[] keywords = { "Android", "iPhone", "iPod", "iPad", "Windows Phone", "MQQBrowser" };
+
+            //排除 Windows 桌面系统  
+            if (!agent.Contains("Windows NT") || (agent.Contains("Windows NT") && agent.Contains("compatible; MSIE 9.0;")))
+            {
+                //排除 苹果桌面系统  
+                if (!agent.Contains("Windows NT") && !agent.Contains("Macintosh"))
+                {
+                    foreach (string item in keywords)
+                    {
+                        if (agent.Contains(item))
+                        {
+                            IsMobile = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return IsMobile;
+        }
     }
 }
